@@ -1,18 +1,19 @@
 node{
     properties([parameters([string(defaultValue: 'IP', description: 'Where to build e.g IP', name: 'ENV', trim: true)])])
     stage("Clone repo"){
-        git "git@github.com:aidinkobonov/Flaskex.git"
+        git 'git@github.com:aidinkobonov/python_flask.git'
     }
     stage("Remove /tmp content"){
         sh "ssh ec2-user@${ENV} sudo rm -rf /tmp/*"
     }
-    stage ("Copy files over"){
+    stage("Copy filese over"){
         sh "scp -r * ec2-user@${ENV}:/tmp"
+        sh "ssh ec2-user@${ENV}  sudo pip install -r /tmp/requirements.txt"
     }
-    stage ("Create Folder"){
+    stage("Create Folder"){        
         sh "ssh ec2-user@${ENV} sudo mkdir -p /flaskex"
     }
-    //Block to work on next
+    //Block to work on next    
     stage("Write to a file"){
         sh "ssh ec2-user@${ENV} echo [Unit] > /tmp/flaskex.service"
         sh "ssh ec2-user@${ENV} echo After=network.target >> /tmp/flaskex.service"
@@ -24,10 +25,10 @@ node{
         sh "ssh ec2-user@${ENV} echo WantedBy=multi-user.target >> /tmp/flaskex.service"
     }
     //Block to work on next
-    stage ("Copy to System"){
+    stage("Copy to System"){
         sh "ssh ec2-user@${ENV} sudo cp -r /tmp/flaskex.service /etc/systemd/system"
-    }
-    stage ("Move files to /flaskex"){
+    }    
+    stage("move files to /flaskex"){
         try {
             sh "ssh ec2-user@${ENV} sudo cp -r /tmp/* /flaskex"
         }
@@ -35,10 +36,10 @@ node{
             sh "echo did not copy"
         }
     }
-    stage ("Install requirements"){
-        sh "ssh ec2-user@${ENV} sudo pip install -r /tmp/requirements.txt"
-    }
+    //stage("Install requiremennts"){
+    //    sh "ssh ec2-user@${ENV}  pip install -r /flaskex/requirements.txt"
+    //}
     stage("App Run"){
-        sh "ssh ec2-user@${ENV} systemctl start flaskex"
+        sh "ssh ec2-user@${ENV}  sudo systemctl start flaskex"
     }
 }
